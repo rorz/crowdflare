@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="CrowdFlare logo">
+  <defs>
+    <linearGradient id="bg" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="cloud" x1="0%" x2="100%" y1="0%" y2="0%">
+      <stop offset="0%" stop-color="#67e8f9"/>
+      <stop offset="100%" stop-color="#f97316"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="52" fill="url(#bg)"/>
+  <path
+    d="M74 176c-24 0-42-17-42-39 0-21 16-37 37-39 6-26 29-44 57-44 25 0 46 14 55 36 3-1 7-1 10-1 20 0 37 15 40 34 19 3 33 18 33 37 0 22-19 40-43 40H74Z"
+    fill="url(#cloud)"
+  />
+  <path
+    d="M126 66l9 20 22 2-17 14 6 21-20-11-20 11 6-21-17-14 22-2 9-20Z"
+    fill="#fde68a"
+  />
+  <path
+    d="M111 136h34l-22 44h22l-32 42 8-32H95l16-54Z"
+    fill="#f8fafc"
+  />
+</svg>
