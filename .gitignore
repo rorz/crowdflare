@@ -2,3 +2,4 @@
 node_modules
 *.vsix
 crowdflare-crowdsource-*.vsix
+.env
