@@ -1,0 +1,65 @@
+---
+description: Crowd-driven build loop — pause at forks, poll Discord, log to DECISIONS.md
+alwaysApply: true
+---
+
+# Crowdflare — crowd-driven agent
+
+This repo is the **sandbox** where you implement whatever the session brief asks for. The **crowd** (Discord) steers **non-trivial choices**. You are both builder and moderator of that loop.
+
+This workflow is optimized for a **time-boxed foreground run in Cursor or cursor-agent on the user's machine**, not for an unattended 24/7 service. Keep loops short, visible, and demo-friendly.
+
+## Session input
+
+1. **Admin brief** — The human starts the run with a vague direction (e.g. “build a snake game”, “a tiny CLI toy”). If none is repeated in chat, infer it from the latest user message or from `DECISIONS.md` under *Session*.
+2. Prefer shipping **small, runnable** artifacts in this repo unless the brief says otherwise.
+
+## When you MUST consult the crowd
+
+At every **significant decision point**, stop coding and run one **vote cycle**. Examples:
+
+- Visual or UX fork (colors, layout style, animation vs static)
+- Architecture fork only when it materially changes the demo (state library vs none, canvas vs DOM)
+- Feature A vs B when both fit the brief and the choice changes behavior users will see
+
+Do **not** poll for trivia (naming a private variable) or purely internal refactors.
+Avoid stalling the build with too many votes. In a short demo, prefer one poll every few meaningful steps.
+
+## Discord (MCP: `saseq/discord-mcp`)
+
+Ensure the **Discord MCP** is configured (see `.cursor/mcp.json.example`). Use these tools in order:
+
+1. **`find_channel`** / **`list_channels`** — Resolve the decisions channel (e.g. `#decisions` or the channel your team agreed on). Cache the channel ID for the rest of the session.
+2. **`send_message`** — Post a clear poll, e.g.:
+
+   ```text
+   🏗️ DECISION #<n>: <short question>
+   React 🟥 for <option A> | React 🟦 for <option B>
+   Vote closes in ~30s.
+   ```
+
+   Use two **distinct Unicode emoji** people can pick in one click (e.g. 🟥 🟦 💀 🎆), not custom server emoji unless you know the exact ID format the tools expect.
+
+3. **`add_reaction`** — Add **both** poll emoji to the same message so members can click to vote.
+4. **Wait ~30s** — Use the terminal (`sleep 30` on macOS/Linux) so the window is real.
+5. **`read_messages`** — Fetch recent history and locate your poll message. **Count reactions** on each option. Ignore the bot’s own seeded reactions if the payload exposes enough metadata to do that; otherwise subtract one from each seeded emoji count when tallying. If the payload is ambiguous, call that out in the follow-up.
+6. **`send_message`** — Announce the result, e.g. `The crowd has spoken: 🟥 wins (7 vs 3). Snake will be red. Continuing build…`
+7. **`DECISIONS.md`** — Append a short entry (timestamp if known, question, options, winner, counts).
+
+If any Discord step fails (permissions, missing MCP, no votes, or no reaction data), say so in chat, make a **single reasonable default** for the demo, log that as `fallback` in `DECISIONS.md`, and continue.
+
+If MCP is not available but the human can manually relay a poll to Discord, produce the exact poll text for them and continue once they report the result.
+
+## Between votes
+
+Implement the brief and locked-in decisions. Keep the working program in this repo. When you hit the next fork, run another vote cycle.
+
+## Session memory
+
+- At the **start** of a long stretch of work, skim `DECISIONS.md` for prior choices in this run.
+- Never delete history from `DECISIONS.md`; only append.
+
+## Safety and scope
+
+- Do not exfiltrate secrets; do not ask the crowd for tokens or passwords.
+- Stay within the hackathon server’s norms; keep poll content on-topic for the build.

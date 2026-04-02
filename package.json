@@ -1,7 +1,7 @@
 {
   "name": "crowdflare-crowdsource",
   "displayName": "Crowdflare Crowdsource",
-  "description": "Crowdsource entry point for Cursor (command + status bar).",
+  "description": "Crowdflare: VS Code/Cursor extension + crowd-driven agent rules (Discord MCP) for hackathon demos.",
   "version": "0.1.0",
   "publisher": "crowdflare",
   "engines": {
@@ -39,8 +39,8 @@
       "properties": {
         "crowdflare.crowdsourcePrompt": {
           "type": "string",
-          "default": "",
-          "description": "Optional text copied to clipboard when running Crowdsource (paste into Chat)."
+          "default": "Crowdflare session: follow .cursor/rules/crowd-driven-agent.mdc for the full crowd loop. Admin brief for this run: build a small snake game in this repo.",
+          "description": "Copied when running Crowdsource — paste into Agent Chat; edit the brief line per run."
         }
       }
     }
