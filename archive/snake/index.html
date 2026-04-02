@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Snake — Crowdflare</title>
+    <style>
+      :root {
+        --lcd-bg: #061806;
+        --lcd-hud: #2d6a2d;
+        --lcd-phosphor: #55ff55;
+        --lcd-phosphor-dim: #3aa83a;
+        --lcd-food: #b8e994;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-family: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+        background: radial-gradient(ellipse at 50% 30%, #0a280a 0%, #020402 55%);
+        color: var(--lcd-hud);
+      }
+
+      h1 {
+        margin: 0 0 0.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--lcd-phosphor-dim);
+        text-shadow: 0 0 12px rgba(85, 255, 85, 0.35);
+      }
+
+      .frame {
+        padding: 1rem 1.25rem 1.25rem;
+        background: linear-gradient(145deg, #0c1f0c, #050a05);
+        border-radius: 12px;
+        border: 1px solid #143214;
+        box-shadow:
+          0 0 0 1px rgba(85, 255, 85, 0.06),
+          0 20px 50px rgba(0, 0, 0, 0.65),
+          inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      }
+
+      .hud {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 0.65rem;
+        font-size: 0.8rem;
+      }
+
+      .hud strong {
+        color: var(--lcd-phosphor);
+        font-weight: 600;
+      }
+
+      canvas {
+        display: block;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+        border-radius: 4px;
+        background: var(--lcd-bg);
+        box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.5);
+      }
+
+      .hint {
+        margin-top: 0.75rem;
+        text-align: center;
+        font-size: 0.72rem;
+        opacity: 0.85;
+        max-width: 320px;
+        line-height: 1.5;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Snake</h1>
+    <div class="frame">
+      <div class="hud">
+        <span>Score <strong id="score">0</strong></span>
+        <span>Best <strong id="best">0</strong></span>
+      </div>
+      <canvas id="game" width="420" height="420" aria-label="Snake game canvas"></canvas>
+      <p class="hint">
+        Arrow keys to steer. <strong>Space</strong> starts again after game over.
+        <br />
+        <small>Crowdflare: Canvas + Classic LCD</small>
+      </p>
+    </div>
+
+    <script>
+      (function () {
+        const GRID_CELLS = 21;
+        const BASE_TICK_MS = 130;
+        const MIN_TICK_MS = 70;
+        const SPEED_STEP_MS = 4;
+
+        const COLORS = {
+          bg: "#061806",
+          grid: "rgba(61, 154, 61, 0.08)",
+          snake: "#3d9a3d",
+          head: "#6aff6a",
+          headStroke: "#b8ffb8",
+          food: "#b8e994",
+          foodGlow: "rgba(184, 233, 148, 0.45)",
+          gameOver: "rgba(6, 24, 6, 0.88)",
+          crtVignette: "rgba(0, 0, 0, 0.15)",
+        };
+
+        const canvas = document.getElementById("game");
+        const ctx = canvas.getContext("2d");
+        const scoreEl = document.getElementById("score");
+        const bestEl = document.getElementById("best");
+
+        const BEST_KEY = "crowdflare-snake-best";
+        let best = Number(localStorage.getItem(BEST_KEY) || 0);
+        bestEl.textContent = String(best);
+
+        let cell = 1;
+
+        function resize() {
+          const max = Math.min(420, Math.floor(window.innerWidth - 48));
+          canvas.width = max;
+          canvas.height = max;
+          cell = max / GRID_CELLS;
+        }
+
+        resize();
+        window.addEventListener("resize", resize);
+
+        let snake;
+        let dir;
+        let pendingDir;
+        let food;
+        let score;
+        let running;
+        let tickMs;
+        let lastTick;
+
+        function keyToDir(key) {
+          if (key === "ArrowUp") return [0, -1];
+          if (key === "ArrowDown") return [0, 1];
+          if (key === "ArrowLeft") return [-1, 0];
+          if (key === "ArrowRight") return [1, 0];
+          return null;
+        }
+
+        function opposite(a, b) {
+          return a[0] === -b[0] && a[1] === -b[1];
+        }
+
+        function randomCell() {
+          return [
+            Math.floor(Math.random() * GRID_CELLS),
+            Math.floor(Math.random() * GRID_CELLS),
+          ];
+        }
+
+        function placeFood() {
+          const occupied = new Set(snake.map((s) => s[0] + "," + s[1]));
+          let p;
+          do {
+            p = randomCell();
+          } while (occupied.has(p[0] + "," + p[1]));
+          food = p;
+        }
+
+        function reset() {
+          const mid = Math.floor(GRID_CELLS / 2);
+          snake = [
+            [mid - 1, mid],
+            [mid, mid],
+            [mid + 1, mid],
+          ];
+          dir = [-1, 0];
+          pendingDir = dir;
+          score = 0;
+          tickMs = BASE_TICK_MS;
+          running = true;
+          lastTick = 0;
+          scoreEl.textContent = "0";
+          placeFood();
+        }
+
+        function gameOver() {
+          running = false;
+          if (score > best) {
+            best = score;
+            localStorage.setItem(BEST_KEY, String(best));
+            bestEl.textContent = String(best);
+          }
+        }
+
+        function step() {
+          dir = pendingDir;
+          const head = snake[0];
+          const next = [head[0] + dir[0], head[1] + dir[1]];
+
+          if (
+            next[0] < 0 ||
+            next[0] >= GRID_CELLS ||
+            next[1] < 0 ||
+            next[1] >= GRID_CELLS
+          ) {
+            gameOver();
+            return;
+          }
+
+          const hitSelf = snake.some((s) => s[0] === next[0] && s[1] === next[1]);
+          if (hitSelf) {
+            gameOver();
+            return;
+          }
+
+          snake.unshift(next);
+
+          if (next[0] === food[0] && next[1] === food[1]) {
+            score += 1;
+            scoreEl.textContent = String(score);
+            placeFood();
+            tickMs = Math.max(MIN_TICK_MS, tickMs - SPEED_STEP_MS);
+          } else {
+            snake.pop();
+          }
+        }
+
+        function draw() {
+          ctx.fillStyle = COLORS.bg;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          ctx.strokeStyle = COLORS.grid;
+          ctx.lineWidth = 1;
+          for (let i = 0; i <= GRID_CELLS; i++) {
+            const x = i * cell;
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvas.height);
+            ctx.stroke();
+            const y = i * cell;
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(canvas.width, y);
+            ctx.stroke();
+          }
+
+          for (let i = 0; i < snake.length; i++) {
+            const [cx, cy] = snake[i];
+            const px = cx * cell;
+            const py = cy * cell;
+            const pad = cell * 0.12;
+            if (i === 0) {
+              ctx.fillStyle = COLORS.head;
+              ctx.shadowColor = COLORS.head;
+              ctx.shadowBlur = cell * 0.35;
+              ctx.fillRect(px + pad, py + pad, cell - pad * 2, cell - pad * 2);
+              ctx.shadowBlur = 0;
+              ctx.strokeStyle = COLORS.headStroke;
+              ctx.lineWidth = 1;
+              ctx.strokeRect(px + pad, py + pad, cell - pad * 2, cell - pad * 2);
+            } else {
+              ctx.fillStyle = COLORS.snake;
+              ctx.fillRect(px + pad, py + pad, cell - pad * 2, cell - pad * 2);
+            }
+          }
+
+          const [fx, fy] = food;
+          const fpx = fx * cell;
+          const fpy = fy * cell;
+          const fpad = cell * 0.18;
+          ctx.shadowColor = COLORS.foodGlow;
+          ctx.shadowBlur = cell * 0.5;
+          ctx.fillStyle = COLORS.food;
+          ctx.fillRect(fpx + fpad, fpy + fpad, cell - fpad * 2, cell - fpad * 2);
+          ctx.shadowBlur = 0;
+
+          const g = ctx.createRadialGradient(
+            canvas.width * 0.5,
+            canvas.height * 0.35,
+            0,
+            canvas.width * 0.5,
+            canvas.height * 0.5,
+            canvas.width * 0.75
+          );
+          g.addColorStop(0, "transparent");
+          g.addColorStop(1, COLORS.crtVignette);
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          if (!running) {
+            ctx.fillStyle = COLORS.gameOver;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = COLORS.head;
+            ctx.font = `${Math.max(14, cell * 0.85)}px JetBrains Mono, SF Mono, monospace`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - cell * 0.6);
+            ctx.fillStyle = COLORS.snake;
+            ctx.font = `${Math.max(11, cell * 0.55)}px JetBrains Mono, SF Mono, monospace`;
+            ctx.fillText("Space to restart", canvas.width / 2, canvas.height / 2 + cell * 0.85);
+          }
+        }
+
+        function frame(now) {
+          if (!lastTick) lastTick = now;
+          const elapsed = now - lastTick;
+          if (running && elapsed >= tickMs) {
+            lastTick = now;
+            step();
+          }
+          draw();
+          requestAnimationFrame(frame);
+        }
+
+        window.addEventListener("keydown", (e) => {
+          const next = keyToDir(e.key);
+          if (next && !opposite(next, pendingDir)) {
+            e.preventDefault();
+            pendingDir = next;
+          } else if (e.code === "Space") {
+            e.preventDefault();
+            if (!running) reset();
+          }
+        });
+
+        reset();
+        requestAnimationFrame(frame);
+      })();
+    </script>
+  </body>
+</html>
