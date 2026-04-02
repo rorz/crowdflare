@@ -1,0 +1,18 @@
+---
+description: Base CrowdFlare starter rule for fast, shippable hackathon work
+alwaysApply: false
+---
+
+# CrowdFlare starter rule
+
+This file is intentionally light. Keep the default behavior useful without locking your teammate into one gimmick.
+
+- Optimize for a working demo before polish.
+- State assumptions plainly and verify the risky ones first.
+- Prefer one small, testable change over a large speculative rewrite.
+- Keep project-specific voice, comedy, and chaos in skills or commands so the base rule stays reusable.
+
+## TODO
+
+- Replace these bullets with the team's real guardrails.
+- Add any hard constraints the plugin should always respect.
