@@ -5,59 +5,92 @@
 </p>
 
 <p align="center">
-  <strong>CrowdFlare is a Cursor Plugin for crowdsourcing your agentic development sessions.</strong>
+  <strong>🔥 CrowdFlare is a Cursor plugin that lets your crowd steer your agentic build in real time 🔥</strong>
 </p>
 
-CrowdFlare turns a solo AI coding run into a crowd-steered build loop. Your Cursor agent keeps shipping, your audience votes on the forks that matter, and every decision is captured so judges can see the process, not just the final demo.
+## 🚀 What It Does
 
-## Why This Is Hackathon-Strong
+CrowdFlare turns solo prompting into multiplayer development:
 
-- Live audience participation: people shape product direction in real time.
-- Faster high-signal decisions: poll only at meaningful forks, then keep momentum.
-- Transparent execution: every vote is recorded in [`DECISIONS.md`](./DECISIONS.md).
-- Built for demos: optimized for a focused 30-90 minute build sprint.
+1. 🤖 Your Cursor agent builds.
+2. 🛑 At big forks, CrowdFlare asks the crowd to vote in Discord.
+3. ✅ The winning option becomes the next build direction.
+4. 🧠 The decision gets logged in [`DECISIONS.md`](./DECISIONS.md).
+5. 🔁 Repeat until the product is weird, working, and alive.
 
-## How CrowdFlare Works
+## ⚙️ How It Works (Super Simple)
 
-1. Start a Cursor session with a broad brief (for example: "build a tiny multiplayer party game").
-2. The agent builds until it reaches a real decision point.
-3. CrowdFlare posts a Discord poll using [`scripts/discord-helper.mjs`](./scripts/discord-helper.mjs).
-4. Before the next coding iteration, CrowdFlare re-polls any non-bot channel messages posted after the latest CrowdFlare message via `steering-batch` and builds weighted steering context.
-5. The winning option is applied and logged in [`DECISIONS.md`](./DECISIONS.md).
-6. The session continues until you have a shippable demo and a visible decision trail.
+1. 🧾 You give the agent a broad brief.
+2. 🎯 The rule in [`.cursor/rules/crowd-driven-agent.mdc`](./.cursor/rules/crowd-driven-agent.mdc) tells it when to ask the crowd.
+3. 💬 [`scripts/discord-helper.mjs`](./scripts/discord-helper.mjs) handles Discord actions:
+   - list channels
+   - post poll messages
+   - seed reactions
+   - tally winners
+   - ingest weighted steering signals with `steering-batch`
+4. 🗂️ Crowd memory is persisted in:
+   - [`DECISIONS.md`](./DECISIONS.md)
+   - `.crowdflare/discord-steering-state.json`
 
-## What Ships In This Plugin
+## 🧩 What’s In This Plugin
 
-- [`.cursor/rules/crowd-driven-agent.mdc`](./.cursor/rules/crowd-driven-agent.mdc): the crowd-vote operating loop for the agent.
-- [`scripts/discord-helper.mjs`](./scripts/discord-helper.mjs): no-dependency Discord helper (list channels, send poll, react, tally, `steering-batch`).
-- `.crowdflare/discord-steering-state.json`: local persisted checkpoint and signal log for delta message ingest.
-- [`DECISIONS.md`](./DECISIONS.md): append-only vote and outcome log.
-- [`commands/crowdflare.md`](./commands/crowdflare.md): starter Cursor command to kick off the workflow.
-- [`agents/crowdflare.md`](./agents/crowdflare.md): starter CrowdFlare agent persona.
-- [`skills/crowdflare/SKILL.md`](./skills/crowdflare/SKILL.md): starter skill you can tune to your team style.
+- [`.cursor/rules/crowd-driven-agent.mdc`](./.cursor/rules/crowd-driven-agent.mdc) -> crowd decision loop
+- [`commands/crowdflare.md`](./commands/crowdflare.md) -> starter command
+- [`agents/crowdflare.md`](./agents/crowdflare.md) -> starter agent persona
+- [`skills/crowdflare/SKILL.md`](./skills/crowdflare/SKILL.md) -> starter skill
+- [`scripts/discord-helper.mjs`](./scripts/discord-helper.mjs) -> Discord helper CLI
+- [`DECISIONS.md`](./DECISIONS.md) -> append-only decision log
 
-## Quick Start
+## 🛠️ Quick Setup
 
-1. Create a `.env` file in repo root with:
+1. Create `.env` in repo root:
    - `DISCORD_TOKEN=<your-bot-token>`
    - `DISCORD_GUILD_ID=<your-server-id>`
-2. Open this repo in Cursor.
-3. Run:
+2. Validate setup:
    ```bash
    node scripts/validate-template.mjs
    ```
-4. Start Cursor Agent in this repo and give it a brief.
-5. Let CrowdFlare drive decision polls and continue building from each crowd result.
-6. Before each iteration, run `node scripts/discord-helper.mjs steering-batch <channelId>` and feed `steering_text` into the next prompt.
+3. Start Cursor Agent in this repo.
+4. Give it a brief and let it build.
 
-## Judge-Friendly Demo Script
+## 📟 Command Cheat Sheet
 
-1. Start with one sentence: "This is CrowdFlare, a Cursor plugin that lets a crowd steer an agentic build in real time."
-2. Show the agent coding.
-3. Trigger one visible fork and launch a Discord vote.
-4. Show tally + automatic decision logging.
-5. Ship the winning branch and highlight the decision history as proof of human-in-the-loop product direction.
+```bash
+# list channels
+node scripts/discord-helper.mjs list-channels
 
-## Practical Constraint
+# post a poll message
+node scripts/discord-helper.mjs send <channelId> "🔥 DECISION #1: Neon glitch or bloody minimal?"
 
-If you cannot install a bot in the target Discord server, direct posting will fail. In that case, relay polls manually and continue logging outcomes in [`DECISIONS.md`](./DECISIONS.md).
+# add reaction options
+node scripts/discord-helper.mjs react <channelId> <messageId> 🟥
+node scripts/discord-helper.mjs react <channelId> <messageId> 🟦
+
+# tally winner
+node scripts/discord-helper.mjs tally <channelId> <messageId> 🟥 🟦
+
+# pull weighted steering from new crowd messages
+node scripts/discord-helper.mjs steering-batch <channelId>
+```
+
+## 🎬 Slick Demo: Build A Weird Berserk Site
+
+Use this exact flow:
+
+1. 🗣️ Prompt:
+   `"Build a weird berserk one-page site with violent typography, cursed motion, and interactive chaos."`
+2. 🧪 First fork poll:
+   `"😈 Visual vibe? 🟥 BLOOD ARCADE | 🟦 GLITCH RITUAL"`
+3. 🎨 Second fork poll:
+   `"🌀 Hero effect? 🟥 Screen tear shader | 🟦 Eye-tracking curse cursor"`
+4. 🔊 Third fork poll:
+   `"🎛️ Interaction style? 🟥 Hover triggers distortion | 🟦 Click summons random lore cards"`
+5. 🧠 Run `steering-batch`, paste `steering_text` into the next agent prompt, keep shipping.
+6. 📸 End state:
+   - live weird site
+   - visible vote trail in Discord
+   - full decisions in [`DECISIONS.md`](./DECISIONS.md)
+
+## 🧯 If Discord Bot Access Is Blocked
+
+Paste poll text manually into Discord, collect the winner, then keep logging the result in [`DECISIONS.md`](./DECISIONS.md).
