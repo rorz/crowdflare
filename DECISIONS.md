@@ -13,6 +13,14 @@ Append-only record of crowd votes for this repo. The agent adds rows after each 
 
 _Log entries appear below._
 
-| # | Decision | Options | Winner | Notes |
-|---|----------|---------|--------|-------|
-| — | — | — | — | — |
+## Decision template
+
+```md
+## Decision #N — Short title
+- **Question:** what was asked
+- **Options:** A (emoji) vs B (emoji)
+- **Result:** A wins 3-1
+- **Applied:** what changed in the code
+- **Timestamp:** ISO or local time if available
+- **Notes:** optional fallback or tie details
+```

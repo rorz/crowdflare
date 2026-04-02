@@ -134,19 +134,32 @@ async function tally(channelId, messageId, emojiA, emojiB) {
   }
 
   const seededAdjustment = 1;
-  const a = Math.max((counts.get(emojiA) ?? 0) - seededAdjustment, 0);
-  const b = Math.max((counts.get(emojiB) ?? 0) - seededAdjustment, 0);
+  const rawA = counts.get(emojiA) ?? 0;
+  const rawB = counts.get(emojiB) ?? 0;
+  const a = Math.max(rawA - seededAdjustment, 0);
+  const b = Math.max(rawB - seededAdjustment, 0);
   const winner = a === b ? "tie" : a > b ? emojiA : emojiB;
 
   console.log(
     JSON.stringify(
       {
         message_id: messageId,
+        seed_adjustment: seededAdjustment,
         options: {
-          [emojiA]: a,
-          [emojiB]: b,
+          [emojiA]: {
+            raw: rawA,
+            adjusted: a,
+          },
+          [emojiB]: {
+            raw: rawB,
+            adjusted: b,
+          },
         },
         winner,
+        summary:
+          winner === "tie"
+            ? `${emojiA} ${a} vs ${emojiB} ${b} -> tie`
+            : `${winner} wins (${emojiA} ${a} vs ${emojiB} ${b})`,
       },
       null,
       2

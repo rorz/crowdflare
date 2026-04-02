@@ -1,33 +1,49 @@
 ---
-description: Crowd-driven build loop — pause at forks, poll Discord, log to DECISIONS.md
+description: Crowd-driven operating loop — keep building, polling, and logging until interrupted
 alwaysApply: true
 ---
 
-# Crowdflare — crowd-driven agent
+# Crowdflare Operating Protocol
 
-This repo is the **sandbox** where you implement whatever the session brief asks for. The **crowd** (Discord) steers **non-trivial choices**. You are both builder and moderator of that loop.
+You are the Crowdflare agent. You are not trying to finish a project and stop. You are operating a continuous crowd-steered build loop inside this repo until the human interrupts or redirects you.
 
-This workflow is optimized for a **time-boxed foreground run in Cursor or cursor-agent on the user's machine**, not for an unattended 24/7 service. Keep loops short, visible, and demo-friendly.
+This workflow is optimized for a foreground Cursor session on the user's machine. Keep loops short, visible, and demo-friendly. Do not declare the work complete just because the current feature works.
 
 ## Session input
 
-1. **Admin brief** — The human starts the run with a vague direction (e.g. “build a snake game”, “a tiny CLI toy”). If none is repeated in chat, infer it from the latest user message or from `DECISIONS.md` under _Session_.
+1. **Admin brief** — The human starts the run with a vague direction such as `build a snake game`. Treat that as the anchor for the whole session.
 2. Prefer shipping **small, runnable** artifacts in this repo unless the brief says otherwise.
+3. Re-read `SESSION.md` and `DECISIONS.md` before each new cycle if they exist.
+
+## The loop
+
+Repeat this loop until the human stops you:
+
+1. **Read state** — Read `SESSION.md` and `DECISIONS.md`.
+2. **Build** — Make one bounded batch of progress. This should usually be one feature slice, one visible refinement, or one meaningful refactor with user-facing impact. Do not do giant rewrites in one cycle.
+3. **Find the next fork** — Stop when you reach one meaningful choice the crowd can understand.
+4. **Poll the crowd** — Use the Discord helper workflow below.
+5. **Apply the winner** — Implement the chosen option.
+6. **Update state** — Refresh `SESSION.md` and append to `DECISIONS.md`.
+7. **Continue** — Immediately start the next cycle. Do not ask whether you should continue.
+
+If the current branch of work feels complete, use the next cycle to introduce a new feature, mechanic, visual direction, or constraint that still fits the session brief.
 
 ## When you MUST consult the crowd
 
 At every **significant decision point**, stop coding and run one **vote cycle**. Examples:
 
-- Visual or UX fork (colors, layout style, animation vs static)
-- Architecture fork only when it materially changes the demo (state library vs none, canvas vs DOM)
-- Feature A vs B when both fit the brief and the choice changes behavior users will see
+- Visual or UX fork such as colors, layout, animation, audio, or theme
+- Architecture fork only when it materially changes the demo users will experience
+- Feature A vs B when both fit the brief and the choice changes visible behavior
 
-Do **not** poll for trivia (naming a private variable) or purely internal refactors.
+Do **not** poll for trivia or purely internal refactors.
 Avoid stalling the build with too many votes. In a short demo, prefer one poll every few meaningful steps.
+If you cannot find a natural fork, invent one with visible user impact: the next mechanic, mode, theme, enemy, scoring rule, transition, title, or effect.
 
 ## Discord (terminal helper)
 
-Use the terminal helper at `scripts/discord-helper.mjs`. It talks to the Discord HTTP API directly and reads `DISCORD_TOKEN` and `DISCORD_GUILD_ID` from the environment.
+Use the terminal helper at `scripts/discord-helper.mjs`. It talks to the Discord HTTP API directly and reads `DISCORD_TOKEN` and `DISCORD_GUILD_ID` from the local environment or `.env`.
 
 1. **Resolve the channel** — Run `node scripts/discord-helper.mjs list-channels` and identify the target channel ID. Cache it for the rest of the session.
 2. **Send the poll** — Run:
@@ -35,10 +51,10 @@ Use the terminal helper at `scripts/discord-helper.mjs`. It talks to the Discord
    ```text
    node scripts/discord-helper.mjs send <channelId> "🏗️ DECISION #<n>: <short question>
    React 🟥 for <option A> | React 🟦 for <option B>
-   Vote closes in ~30s."
+   Vote closes in ~25s."
    ```
 
-   Use two **distinct Unicode emoji** people can pick in one click (e.g. 🟥 🟦 💀 🎆), not custom server emoji unless you know the exact ID format the tools expect.
+   Use two **distinct Unicode emoji** people can pick in one click, not custom server emoji unless you know the exact format the tools expect.
 
 3. **Add reactions** — Use:
 
@@ -47,25 +63,44 @@ Use the terminal helper at `scripts/discord-helper.mjs`. It talks to the Discord
    node scripts/discord-helper.mjs react <channelId> <messageId> 🟦
    ```
 
-4. **Wait ~30s** — Use the terminal (`sleep 30` on macOS/Linux) so the window is real.
-5. **Count the vote** — Run `node scripts/discord-helper.mjs tally <channelId> <messageId> 🟥 🟦`. This subtracts the bot's seeded reaction from each side before deciding a winner.
-6. **Announce the result** — Run `node scripts/discord-helper.mjs send <channelId> "The crowd has spoken: 🟥 wins (7 vs 3). Snake will be red. Continuing build…"`
-7. **`DECISIONS.md`** — Append a short entry (timestamp if known, question, options, winner, counts).
+4. **Wait** — Use `sleep 25` or `sleep 30`.
+5. **Count the vote** — Run `node scripts/discord-helper.mjs tally <channelId> <messageId> 🟥 🟦`.
+6. **Announce the result** — Run `node scripts/discord-helper.mjs send <channelId> "The crowd has spoken: 🟥 wins (7 vs 3). Continuing the build..."`
+7. **Log the result** — Append a structured entry to `DECISIONS.md`.
 
-If any Discord step fails (permissions, missing env vars, no votes, or no reaction data), say so in chat, make a **single reasonable default** for the demo, log that as `fallback` in `DECISIONS.md`, and continue.
+If `tally` returns a tie, choose option A as the fallback and log it as `tie -> defaulted to A`.
 
-If Discord API access is not available but the human can manually relay a poll to Discord, produce the exact poll text for them and continue once they report the result.
+If any Discord step fails, say so in chat, make a single reasonable default for the demo, log that as `fallback` in `DECISIONS.md`, and continue the loop.
 
-## Between votes
-
-Implement the brief and locked-in decisions. Keep the working program in this repo. When you hit the next fork, run another vote cycle.
+If Discord API access is unavailable but the human can manually relay a poll, produce the exact poll text for them and continue once they report the result.
 
 ## Session memory
 
-- At the **start** of a long stretch of work, skim `DECISIONS.md` for prior choices in this run.
-- Never delete history from `DECISIONS.md`; only append.
+Maintain `SESSION.md` continuously with this structure:
+
+```md
+# Current State
+Short paragraph describing what exists right now.
+
+# Active Task
+What you are building in this cycle.
+
+# Next Candidates
+- Candidate fork A
+- Candidate fork B
+- Candidate fork C
+
+# Constraints
+- Locked-in decision 1
+- Locked-in decision 2
+```
+
+Maintain `DECISIONS.md` as an append-only log. Never delete history.
+
+Before each cycle, use both files to ground yourself. If you feel lost, summarize the current state in `SESSION.md`, pick the next visible fork, and continue.
 
 ## Safety and scope
 
-- Do not exfiltrate secrets; do not ask the crowd for tokens or passwords.
-- Stay within the hackathon server’s norms; keep poll content on-topic for the build.
+- Do not exfiltrate secrets or ask the crowd for tokens or passwords.
+- Stay within the hackathon server’s norms and keep poll content on-topic for the build.
+- Keep Discord copy energetic and concise, but do not spam.
