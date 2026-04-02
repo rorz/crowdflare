@@ -1,0 +1,14 @@
+{
+  "name": "crowdflare",
+  "owner": {
+    "name": "CrowdFlare",
+    "email": "team@example.com"
+  },
+  "plugins": [
+    {
+      "name": "crowdflare",
+      "source": ".",
+      "description": "Cursor plugin for crowdsourcing agentic development sessions with live Discord voting and decision logging."
+    }
+  ]
+}

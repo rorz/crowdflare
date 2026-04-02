@@ -1,5 +1,8 @@
 .DS_Store
 node_modules
 *.vsix
+.crowdflare/discord-steering-state.json
+.crowdflare/discord-steering-state.json.bad-*.json
+.crowdflare/discord-steering-state.json.tmp
 crowdflare-crowdsource-*.vsix
 .env

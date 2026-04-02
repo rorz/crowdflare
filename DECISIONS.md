@@ -17,6 +17,7 @@ _Log entries appear below._
 
 ```md
 ## Decision #N — Short title
+
 - **Question:** what was asked
 - **Options:** A (emoji) vs B (emoji)
 - **Result:** A wins 3-1

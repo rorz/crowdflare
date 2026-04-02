@@ -2,25 +2,17 @@
   "name": "crowdflare",
   "displayName": "CrowdFlare",
   "version": "0.1.0",
-  "description": "Hackathon-ready Cursor plugin scaffold with starter rule, skill, agent, and command stubs for the CrowdFlare team.",
+  "description": "Cursor plugin for crowdsourcing agentic development sessions with live Discord voting and decision logging.",
   "author": {
     "name": "CrowdFlare",
     "email": "team@example.com"
   },
-  "homepage": "https://github.com/rorz/crowdflare",
-  "repository": "https://github.com/rorz/crowdflare",
   "license": "MIT",
-  "logo": "./assets/logo.svg",
+  "logo": "assets/logo.png",
   "keywords": [
     "crowdflare",
-    "cursor-plugin",
+    "plugin",
     "hackathon",
     "starter"
-  ],
-  "category": "developer-tools",
-  "tags": ["starter", "hackathon", "creative"],
-  "skills": "./skills/",
-  "rules": "./rules/",
-  "agents": "./agents/",
-  "commands": "./commands/"
+  ]
 }

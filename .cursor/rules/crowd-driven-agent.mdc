@@ -74,6 +74,20 @@ If any Discord step fails, say so in chat, make a single reasonable default for 
 
 If Discord API access is unavailable but the human can manually relay a poll, produce the exact poll text for them and continue once they report the result.
 
+Before each new implementation iteration, pull steering messages from Discord:
+
+```text
+node scripts/discord-helper.mjs steering-batch <channelId>
+```
+
+`steering-batch` re-polls the full non-bot message window posted after the latest CrowdFlare message in the channel on every run, applies reaction weighting, and suppresses pure-👎 messages.
+
+Use the returned `steering_text` as **Crowd steering context** in the next model prompt. Treat higher-power signals as stronger preference guidance, not absolute constraints.
+
+After each steering ingest, append one concise note to `DECISIONS.md` (counts only, no raw state), e.g.:
+
+`- Crowd steering ingest 2026-04-02T19:35:02Z: new=4 included=3 suppressed=1`
+
 ## Session memory
 
 Maintain `SESSION.md` continuously with this structure:
